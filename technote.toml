@@ -14,7 +14,7 @@ state = "draft"
 
 [[technote.authors]]
 name.given = "Angelo"
-name.family = "Fausti Neto"
+name.family = "Fausti"
 internal_id = "faustinetoa"
 orcid = "https://orcid.org/0000-0002-8095-305X"
 [[technote.authors.affiliations]]
