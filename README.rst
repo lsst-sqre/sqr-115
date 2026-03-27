@@ -3,14 +3,14 @@
 .. image:: https://github.com/lsst-sqre/sqr-115/workflows/CI/badge.svg
    :target: https://github.com/lsst-sqre/sqr-115/actions/
 
-#####################################
-RSP Visit metadata enrichment service
-#####################################
+#########################################################
+ObsForge: The RSP observation metadata enrichment service
+#########################################################
 
 SQR-115
 =======
 
-Design of the RSP Visit metadata enrichment service
+Design of the ObsForge observation metadata enrichment service.
 
 **Links:**
 

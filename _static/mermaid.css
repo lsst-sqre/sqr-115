@@ -1,0 +1,25 @@
+figure.mermaid-wide-content {
+  max-width: none;
+}
+
+figure.mermaid-wide-content .mermaid-container,
+figure.mermaid-wide-content pre.mermaid {
+  width: 90%;
+  max-width: none;
+}
+
+figure.mermaid-wide-content pre.mermaid > svg,
+figure.mermaid-wide-content .mermaid-container pre.mermaid > svg {
+  width: 90% !important;
+  max-width: none !important;
+  height: auto !important;
+}
+
+@media screen and (min-width: 768px) {
+  figure.mermaid-wide-content {
+    width: calc(
+      100vw - var(--tn-sidebar-width) - var(--tn-layout-column-gap) -
+        var(--tn-layout-container-padding)
+    );
+  }
+}
