@@ -1,0 +1,4 @@
+"**Column Name**","**Data Type**","**Unit**","**Description**","**UCD**", "**Constraint**"
+"obs_title","string","","Brief description of dataset in free format","meta.title;obs", "NOT NULL"
+"visit_id","long","","Identifier for a specific LSSTCam pointing","meta.id;obs", "NOT NULL"
+"lsst_detector","long","", "Identifier for CCD within the LSSTCam focal plane", "meta.id;instr.det","NOT NULL"
