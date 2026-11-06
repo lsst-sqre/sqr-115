@@ -103,8 +103,9 @@ All metadata products can be joined through ``visit_id``.
 
    erDiagram
       enrichment_job ||--o{ Visit : creates
-      Visit ||--o{ ObsCore : has
+      Visit ||--o{ VisitDetector : has
       Visit ||--o{ Telemetry : has
+      Visit ||--o{ ObsCore : has
 
       enrichment_job {
           int id PK
@@ -116,8 +117,8 @@ All metadata products can be joined through ``visit_id``.
           int job_id FK
       }
 
-      ObsCore {
-          string obs_id PK
+      VisitDetector {
+          string detector PK
           int visit_id FK
       }
 
@@ -125,6 +126,12 @@ All metadata products can be joined through ``visit_id``.
           timestamptz timestamp PK
           int visit_id FK
       }
+
+      ObsCore {
+          string id PK
+          int visit_id FK
+      }
+
 
 
 Implementation phases
@@ -575,15 +582,22 @@ ObsForge also overrides the following configuration defaults in the ObsCore adap
 
 The ObsCore adapter is hooked in the worker's ``enrich_visit()`` function.
 
-The Visit table
-===============
+The Visit and VisitDetector tables
+==================================
 
-The ObsDB Visit table's source of truth is the ``preliminary_visit_summary`` butler dataset from the Alert Production pipeline.
-Currently this dataset only exists on the Embargo butler.
-Another dataset of interest is the ``aggregate_preliminary_visit_summary`` butler dataset.
+The ObsDB ``Visit`` and ``VisitDetector`` tables source of truth are the ``visit_table`` and ``visit_detector_table`` butler datasets made available to ObsForge through the ``prompt`` butler via the Prompt Publication service.
 
-The definition of the ObsDB Visit table is currently blocked on the availability of these datasets and their publication into the ``prompt`` butler. 
-The ObsDB Visit table will be designed in Phase 2.
+The public-facing schemas of the ``Visit`` and ``VisitDetector`` tables are derived from SDM schemas for Data Preview 2 which also define the structure of the corresponding butler datasets.
+
+.. csv-table:: Visit table columns
+   :file: ./visit_columns.csv
+   :header-rows: 1
+
+
+.. csv-table:: VisitDetector table columns
+   :file: ./visit_detector_columns.csv
+   :header-rows: 1
+
 
 Telemetry summary tables
 ========================
