@@ -22,7 +22,7 @@ The service consists of:
 
 ObsForge integrates with:
 
-- The prompt Butler data repository exposed by the Prompt Publication service, which provides visit metadata through dataset types such as ``preliminary_visit_image`` and ``preliminary_visit_summary``.
+- The prompt Butler data repository exposed by the Prompt Publication service, which provides visit metadata through dataset types such as ``visit_image``, ``visit_table``, and ``visit_detector_table``.
 
 .. note::
 
@@ -165,21 +165,25 @@ The notification payload contains enough information to identify a visit and que
      "day_obs": 20260108,
      "datasets": [
         {
-          "dataset_type": "preliminary_visit_image",
+          "dataset_type": "visit_image",
           "id": "019ba0a6-0173-765f-bf27-56884ff9342a"
         },
         {
-          "dataset_type": "preliminary_visit_image",
+          "dataset_type": "visit_image",
           "id": "019ba0a5-fe48-7c7a-8c3f-540057f026c3"
         },
         {
-          "dataset_type": "preliminary_visit_image",
+          "dataset_type": "visit_image",
           "id": "019ba0a5-fe56-7fe8-b6c3-82991b2633c0"
         },
         {
-          "dataset_type": "visit_summary",
+          "dataset_type": "visit_table",
           "id": "019ba0a5-fe64-7f6e-bb3f-4c8d1c9e2b3a"
-         }
+         },
+        {
+          "dataset_type": "visit_detector_table",
+          "id": "019ba0a5-fe72-7f8e-bb3f-4c8d1c9e2b3b"
+        }
      ],
      "timespan": {
         "begin": "2026-01-09T02:45:51Z",
@@ -189,7 +193,7 @@ The notification payload contains enough information to identify a visit and que
 
 - the ``instrument`` name and ``visit`` pair uniquely identify an observation in ObsForge.
 - ``day_obs`` is included to support basic operational lookup.
-- ``datasets`` is a list of dataset types and IDs (UUIDs) to query the Butler. ``preliminary_visit_image`` and the ``preliminary_visit_summary`` are the first supported dataset types, in the future the notification payload may include others. 
+- ``datasets`` is a list of dataset types and IDs (UUIDs) to query the Butler. ``visit_image``, ``visit_table``, and ``visit_detector_table`` are the first supported dataset types; in the future, the notification payload may include others. 
 - the visit ``timespan`` is provided to support the visit and telemetry association step in ObsForge.
 
 
@@ -323,7 +327,7 @@ It creates an ``EnrichmentJobService`` backed by ``EnrichmentJobStore`` and then
 
 ``enrich_visit`` is the worker hook that performs the ObsCore integration.
 It loads the stored ``registration_payload`` for the durable job, validates it as ``VisitRegistration``, builds a ``DaxObsCoreAdapter`` from the worker context, and retrieves ObsCore records for matching datasets.
-For the first integration, matching datasets are registration payload entries with ``dataset_type`` set to ``preliminary_visit_image``.
+Matching datasets are registration payload entries with ``dataset_type`` set to ``visit_image``.
 The adapter constrains ``lsst.dax.obscore`` by the dataset UUIDs from those entries and returns ``ObsCoreUpsert`` records.
 The worker then upserts each record into the ``ivoa.ObsCore`` table through ``ObsCoreService`` and ``ObsCoreStore``.
 
@@ -354,7 +358,7 @@ The worker then upserts each record into the ``ivoa.ObsCore`` table through ``Ob
       Hook->>Store: Load durable job
       Store-->>Hook: registration_payload
       Hook->>Adapter: iter_visit_records(registration)
-      Adapter->>Butler: Query preliminary_visit_image UUIDs
+      Adapter->>Butler: Query visit_image UUIDs
       Butler-->>Adapter: ObsCore source records
       Adapter-->>Hook: ObsCoreUpsert records
       Hook->>ObsCore: Upsert ObsCore records
@@ -449,7 +453,7 @@ The response body has the following shape:
          "visit": 2026010800095,
          "datasets": [
             {
-               "dataset_type": "preliminary_visit_image",
+               "dataset_type": "visit_image",
                "id": "019ba0a6-0173-765f-bf27-56884ff9342a"
             }
          ],
@@ -495,7 +499,7 @@ The IVOA `ObsCore <https://www.ivoa.net/documents/ObsCore/>`_ data model is focu
 Observations are searched and discovered via TAP.
 
 The ``lsst.dax.obscore`` package implements the ObsCore data model for Rubin Observatory data products, and is used by ObsForge to retrieve ObsCore records from the Butler.
-ObsForge uses the `prompt.yaml <https://raw.githubusercontent.com/lsst-dm/dax_obscore/refs/heads/main/configs/prompt.yaml>`_ configuration and populates the ObsCore table with one ``preliminary_visit_image`` dataset per row. 
+ObsForge uses the `prompt.yaml <https://raw.githubusercontent.com/lsst-dm/dax_obscore/refs/heads/main/configs/prompt.yaml>`_ configuration and populates the ObsCore table with one ``visit_image`` dataset per row. 
 
 Appendix B describes the ObsCore columns in the final configuration.
 
@@ -560,13 +564,13 @@ The enrichment workflow uses the ObsCore adapter to retrieve ObsCore records fro
 The ``ObscoreExporter.iter_records()`` method was added to ``lsst.dax.obscore`` as a public interface to iterate over ObsCore records as Python objects.
 
 ObsForge uses the ``prompt.yaml`` configuration to build an ``ObscoreExporter`` instance in the worker context.
-For a given observation, ObsForge selects ``preliminary_visit_image`` datasets from the registration payload and uses the dataset IDs to constraint the Butler query.
+For a given observation, ObsForge selects ``visit_image`` datasets from the registration payload and uses the dataset IDs to constraint the Butler query.
 
 ObsForge also overrides the following configuration defaults in the ObsCore adapter:
 
 - Change the ``obs_id`` formatter to use the dataset UUIDs and use this column as primary key for the ``ivoa.ObsCore`` table.
 - Add the ``visit_id`` extra column and use it as foreign key to make it easier to join ObsCore rows with the ObsDB ``visits`` table. 
-- drop ``lsst_tract`` and ``lsst_patch`` extra columns since ``tract`` and ``patch`` are coadd concepts and are not part of the ``preliminary_visit_image`` data ID in the Butler.
+- drop ``lsst_tract`` and ``lsst_patch`` extra columns since ``tract`` and ``patch`` are coadd concepts and are not part of the ``visit_image`` data ID in the Butler.
 - drop ``lsst_visit``, ``lsst_band``, and ``lsst_filter`` extra columns since they are redundant with  ``visit_id``, ``band`` and ``physical_filter`` columns in the ObsDB ``visits`` table.
 
 The ObsCore adapter is hooked in the worker's ``enrich_visit()`` function.
@@ -905,7 +909,7 @@ Observation information
 
 - ``dataproduct_type`` - Data product (file content) primary type. E.g. ``image`` for Prompt Processing visit-images. 
 - ``dataproduct_subtype`` 	Data product specific type. Added here to distinguish between different types of data products. E.g. ``lsst.visit_image`` for Prompt Processing preliminary visit-images.
-- ``calib_level`` - Calibration level of the observation: in {0, 1, 2, 3, 4}. E.g. ``2`` for Prompt Processing ``preliminary_visit_image`` since they are calibrated data products.
+- ``calib_level`` - Calibration level of the observation: in {0, 1, 2, 3, 4}. E.g. ``2`` for Prompt Processing ``visit_image`` since they are calibrated data products.
 
 Target information
 ^^^^^^^^^^^^^^^^^^
@@ -984,7 +988,7 @@ Extra columns in the ObsCore table.
    :file: ./extra_columns.csv
    :header-rows: 1
 
-- ``obs_title`` - Brief description of dataset in free format. Formatted like ``"{dataset_type} - {band} - {records[visit].name}-{records[detector].full_name} {records[visit].timespan.begin.utc.isot}Z"``, e.g. ``'preliminary_visit_image - g - MC_O_20260108_000095-R30_S22 2026-01-09T02:45:51.712950Z'``.
+- ``obs_title`` - Brief description of dataset in free format. Formatted like ``"{dataset_type} - {band} - {records[visit].name}-{records[detector].full_name} {records[visit].timespan.begin.utc.isot}Z"``, e.g. ``'visit_image - g - MC_O_20260108_000095-R30_S22 2026-01-09T02:45:51.712950Z'``.
 - ``visit_id`` - Identifier for a specific LSSTCam pointing. E.g. ``2026010800095``. Used as foreign key to join ObsCore rows with the ObsDB ``visits`` table.
 - ``lsst_detector`` - Identifier for CCD within the LSSTCam focal plane". E.g. ``125``
 
